@@ -21,13 +21,13 @@ python exb-tests.py --method implicit --dt 0.1 --tmax 20.0
 
 all the possible arguments are listed below:
 ```sh
-usage: exb-tests.py [-h] [--method {euler,implicit,rk4}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--emag EMAG] [--bmag BMAG] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM]
+usage: exb-tests.py [-h] [--method {euler,implicit,rk4,boris}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--emag EMAG] [--bmag BMAG] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM] [--xaxis XAXIS] [--yaxis YAXIS]
 
 Run ExB tests
 
 options:
   -h, --help            show this help message and exit
-  --method {euler,implicit,rk4}
+  --method {euler,implicit,rk4,boris}
                         Integration method to use
   --dt DT               Time step for integration
   --tmax TMAX           Maximum time for integration
@@ -38,4 +38,6 @@ options:
   --size SIZE SIZE      Dimensions of the plot
   --xlim XLIM XLIM      X-axis limits
   --ylim YLIM YLIM      Y-axis limits
+  --xaxis XAXIS         Quantity for x-axis
+  --yaxis YAXIS         Quantity for y-axis
 ```
