@@ -15,7 +15,7 @@ pip install numpy plotext
 use the script to run the particle pusher with given params and plot:
 
 ```sh
-python3 exb_test.py [arguments]
+python3 push.py [ARGS]
 ```
 
 ### things to try
@@ -27,13 +27,13 @@ python3 exb_test.py [arguments]
 ### examples
 
 ```sh
-python exb-tests.py --method boris --dt 5.0 --size 80 40 --u0 20.0 0.0 0.0 --tmax 500 --emag 0.5
+python push.py --method boris --dt 5.0 --size 80 40 --u0 20.0 0.0 0.0 --tmax 500 --emag 0.5
 ```
 
 ![demo-1](demos/demo-1.png)
 
 ```sh
-python exb-tests.py --method implicit --u0 0.05 0.1 0.0 --tmax 150 --preset mirror --dt 0.05
+python push.py --method implicit --u0 0.05 0.1 0.0 --tmax 150 --preset mirror --dt 0.05
 ```
 
 ![demo-2](demos/demo-2.png)
@@ -42,8 +42,8 @@ python exb-tests.py --method implicit --u0 0.05 0.1 0.0 --tmax 150 --preset mirr
 
 all the possible arguments are listed below:
 ```sh
-usage: exb-tests.py [-h] [--method {euler,implicit,rk4,boris}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--e E] [--b B] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM]
-                    [--preset {mirror,ExB,None}] [--xaxis XAXIS] [--yaxis YAXIS]
+usage: push.py [-h] [--method {euler,implicit,rk4,boris}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--e E] [--b B] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM]
+               [--preset {mirror,ExB,None}] [--xaxis XAXIS] [--yaxis YAXIS]
 
 Run ExB tests
 
