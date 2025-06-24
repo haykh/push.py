@@ -233,10 +233,13 @@ if __name__ == "__main__":
     )
     parser.add_argument("--xaxis", type=str, default="x", help="Quantity for x-axis")
     parser.add_argument("--yaxis", type=str, default="y", help="Quantity for y-axis")
+    parser.add_argument(
+        "--movie",
+        type=float,
+        default=None,
+        help="Play the simulation as a movie with a given framerate",
+    )
     args = parser.parse_args()
-
-    plt.theme("pro")
-    plt.plot_size(*args.size)
 
     def Efunc(x: np.ndarray, t: float) -> np.ndarray:
         if args.preset is not None:
@@ -317,27 +320,43 @@ if __name__ == "__main__":
     def print_field(field: str) -> str:
         return f"[{field.replace(',', ', ')}]"
 
-    print(f"dt={args.dt}, tmax={args.tmax}")
-    print(f"x0={print_vector(args.x0)}, u0={print_vector(args.u0)}")
-    if args.preset is None:
-        print(f"E={print_field(args.e)}, B={print_field(args.b)}")
-    else:
-        print(f"using preset {args.preset}")
+    def frame(ti: int):
+        print(f"dt={args.dt}, tmax={args.tmax}")
+        print(f"x0={print_vector(args.x0)}, u0={print_vector(args.u0)}")
+        if args.preset is None:
+            print(f"E={print_field(args.e)}, B={print_field(args.b)}")
+        else:
+            print(f"using preset {args.preset}")
 
-    xaxis = get_quantity(args.xaxis)
-    yaxis = get_quantity(args.yaxis)
-    plt.plot(xaxis, yaxis)
-    if args.xlim[0] == -np.inf and args.xlim[1] == np.inf:
-        plt.xlim(*get_extent(xaxis))
-    else:
-        plt.xlim(*args.xlim)
+        xaxis = get_quantity(args.xaxis)
+        yaxis = get_quantity(args.yaxis)
+        plt.plot(xaxis[:ti], yaxis[:ti])
+        if args.xlim[0] == -np.inf and args.xlim[1] == np.inf:
+            plt.xlim(*get_extent(xaxis))
+        else:
+            plt.xlim(*args.xlim)
 
-    if args.ylim[0] == -np.inf and args.ylim[1] == np.inf:
-        plt.ylim(*get_extent(yaxis))
+        if args.ylim[0] == -np.inf and args.ylim[1] == np.inf:
+            plt.ylim(*get_extent(yaxis))
+        else:
+            plt.ylim(*args.ylim)
+        plt.xlabel(args.xaxis)
+        plt.ylabel(args.yaxis)
+        plt.title(f"{name} dt={args.dt}")
+
+    plt.theme("pro")
+    plt.plot_size(*args.size)
+
+    if args.movie is not None:
+        delta = 1.0 / args.movie
+        stopit = False
+        while not stopit:
+            for ti in range(len(ts)):
+                plt.cld()
+                plt.clt()
+                frame(ti)
+                plt.show()
+                plt.sleep(delta)
     else:
-        plt.ylim(*args.ylim)
-    plt.xlabel(args.xaxis)
-    plt.ylabel(args.yaxis)
-    plt.title(f"{name} dt={args.dt}")
-    plt.show()
-    plt.cld()
+        frame(len(ts) - 1)
+        plt.show()

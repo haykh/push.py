@@ -23,6 +23,7 @@ python3 push.py [ARGS]
 1. play with the `--method [METHOD]` flag trying different options, and vary the `--dt [TIMESTEP]`
 2. use predefined fields with `--preset [PRESET]`, e.g., `--preset mirror`
 3. try custom fields with `--e [EFIELD]` and `--b [BFIELD]`, e.g., `--b 0.0,0.0,2.0+np.tanh(y)` (go crazy)
+4. play it as a movie(!!!) by adding `--movie [FRAMERATE]`
 
 ### examples
 
@@ -60,9 +61,9 @@ python3 push.py [ARGS]
 all the possible arguments are listed below:
 ```sh
 usage: push.py [-h] [--method {euler,implicit,rk4,boris}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--e E] [--b B] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM]
-               [--preset {mirror,ExB,gradB,betatron,None}] [--xaxis XAXIS] [--yaxis YAXIS]
+               [--preset {mirror,ExB,gradB,betatron,None}] [--xaxis XAXIS] [--yaxis YAXIS] [--movie MOVIE]
 
-Run ExB tests
+Push a particle in the given electromagnetic fields
 
 options:
   -h, --help            show this help message and exit
@@ -81,4 +82,5 @@ options:
                         preset E, B configuration
   --xaxis XAXIS         Quantity for x-axis
   --yaxis YAXIS         Quantity for y-axis
+  --movie MOVIE         Play the simulation as a movie with a given framerate
 ```
