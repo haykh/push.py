@@ -3,6 +3,19 @@ import plotext as plt
 import caltechschool as cs
 import argparse
 
+#     if args.method == "euler":
+#     integrator = euler
+#     name = "Explicit Euler"
+# elif args.method == "implicit":
+#     integrator = implicit
+#     name = "Implicit"
+# elif args.method == "rk4":
+#     integrator = rk4
+#     name = "Runge-Kutta 4th Order"
+# elif args.method == "boris":
+#     integrator = boris
+#     name = "Boris"
+
 
 def euler(
     x: np.ndarray, u: np.ndarray, t: float, dt: float, E: cs.Field, B: cs.Field
@@ -24,7 +37,6 @@ def rk4(
     ulast = u[-1]
     Eval = E(xlast, t)
     Bval = B(xlast, t)
-    gammalast = np.sqrt(1.0 + np.linalg.norm(ulast) ** 2)
 
     def rhs_x(u: np.ndarray) -> np.ndarray:
         return u / np.sqrt(1.0 + np.linalg.norm(u) ** 2)
@@ -89,11 +101,81 @@ def implicit(
     return xprime, uprime
 
 
+def mirror_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
+    e = np.zeros(3)
+    b = np.zeros(3)
+    L = 1.0
+    D = 0.1
+    Bin = 0.5
+    Bout = 2.0
+    if np.abs(x[0]) >= L + D:
+        b[0] = Bout
+        b[1] = 0.0
+    elif np.abs(x[0]) <= L:
+        b[0] = Bin
+        b[1] = 0.0
+    else:
+        b[0] = (
+            Bin
+            + (Bout - Bin)
+            * (np.sin(np.pi * (np.abs(x[0]) - L + 0.5 * D) / D) + 1)
+            * 0.5
+        )
+        phi = np.arctan2(x[2], x[1])
+        br = (
+            -0.5
+            * np.sqrt(x[2] ** 2 + x[1] ** 2)
+            * (
+                0.5
+                * (Bout - Bin)
+                * np.cos(np.pi * (np.abs(x[0]) - L + 0.5 * D) / D)
+                * (np.pi / D)
+                * np.sign(x[0])
+            )
+        )
+        b[1] = br * np.cos(phi)
+        b[2] = br * np.sin(phi)
+    return e, b
+
+
+def ExB_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
+    e = np.array([0.0, 0.01, 0.0])
+    b = np.array([0.0, 0.0, 1.0])
+    return e, b
+
+
+PRESETS = {
+    "mirror": {
+        "fields": mirror_field,
+    },
+    "ExB": {
+        "fields": ExB_field,
+    },
+}
+METHODS = {
+    "euler": {
+        "name": "Explicit Euler",
+        "integrator": euler,
+    },
+    "implicit": {
+        "name": "Implicit",
+        "integrator": implicit,
+    },
+    "rk4": {
+        "name": "Runge-Kutta 4th Order",
+        "integrator": rk4,
+    },
+    "boris": {
+        "name": "Boris",
+        "integrator": boris,
+    },
+}
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run ExB tests")
     parser.add_argument(
         "--method",
-        choices=["euler", "implicit", "rk4", "boris"],
+        choices=METHODS.keys(),
         help="Integration method to use",
     )
     parser.add_argument(
@@ -113,14 +195,20 @@ if __name__ == "__main__":
         "--u0",
         type=float,
         nargs=3,
-        default=(0.05, 0.0, 0.0),
+        default=(0.0, 0.0, 0.0),
         help="Initial 4-velocity: ux, uy, uz",
     )
     parser.add_argument(
-        "--emag", type=float, default=0.01, help="Magnitude of the electric field"
+        "--e",
+        type=str,
+        default="0,0,0",
+        help="Electric field [format: ex,ey,ez; can use expressions with x, y, z, t]",
     )
     parser.add_argument(
-        "--bmag", type=float, default=1.0, help="Magnitude of the magnetic field"
+        "--b",
+        type=str,
+        default="0,0,0",
+        help="Magnetic field [format: bx,by,bz; can use expressions with x, y, z, t]",
     )
     parser.add_argument(
         "--size", type=int, nargs=2, default=(80, 30), help="Dimensions of the plot"
@@ -131,6 +219,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ylim", type=float, nargs=2, default=(-np.inf, np.inf), help="Y-axis limits"
     )
+    parser.add_argument(
+        "--preset",
+        type=str,
+        choices=list(PRESETS.keys()) + [None],
+        default=None,
+        help="preset E, B configuration",
+    )
     parser.add_argument("--xaxis", type=str, default="x", help="Quantity for x-axis")
     parser.add_argument("--yaxis", type=str, default="y", help="Quantity for y-axis")
     args = parser.parse_args()
@@ -139,10 +234,22 @@ if __name__ == "__main__":
     plt.plot_size(*args.size)
 
     def Efunc(x: np.ndarray, t: float) -> np.ndarray:
-        return np.array([0.0, args.emag, 0.0])
+        if args.preset is not None:
+            e, _ = PRESETS[args.preset]["fields"](x, t)
+            return e
+        e = np.zeros(3)
+        for i, comp in enumerate(args.e.split(",")):
+            e[i] = eval(comp, {"x": x[0], "y": x[1], "z": x[2], "t": t, "np": np})
+        return e
 
     def Bfunc(x: np.ndarray, t: float) -> np.ndarray:
-        return np.array([0.0, 0.0, args.bmag])
+        if args.preset is not None:
+            _, b = PRESETS[args.preset]["fields"](x, t)
+            return b
+        b = np.zeros(3)
+        for i, comp in enumerate(args.b.split(",")):
+            b[i] = eval(comp, {"x": x[0], "y": x[1], "z": x[2], "t": t, "np": np})
+        return b
 
     integrator = None
     name = None
@@ -198,6 +305,19 @@ if __name__ == "__main__":
     def get_extent(values: np.ndarray) -> tuple[float, float]:
         dv = np.max(values) - np.min(values)
         return np.min(values) - 0.1 * dv, np.max(values) + 0.1 * dv
+
+    def print_vector(vec: np.ndarray) -> str:
+        return f"[{', '.join(f'{v:.2f}' for v in vec)}]"
+
+    def print_field(field: str) -> str:
+        return f"[{field.replace(',', ', ')}]"
+
+    print(f"dt={args.dt}, tmax={args.tmax}")
+    print(f"x0={print_vector(args.x0)}, u0={print_vector(args.u0)}")
+    if args.preset is None:
+        print(f"E={print_field(args.e)}, B={print_field(args.b)}")
+    else:
+        print(f"using preset {args.preset}")
 
     xaxis = get_quantity(args.xaxis)
     yaxis = get_quantity(args.yaxis)
