@@ -38,12 +38,18 @@ python push.py --method implicit --u0 0.05 0.1 0.0 --tmax 150 --preset mirror --
 
 ![demo-2](demos/demo-2.png)
 
+```sh
+python push.py --method boris --u0 0.0 1.0 0.0 --x0 0.0 0.0 0.0 --tmax 40 --preset betatron --dt 0.02
+```
+
+![demo-3](demos/demo-3.png)
+
 ### all options
 
 all the possible arguments are listed below:
 ```sh
 usage: push.py [-h] [--method {euler,implicit,rk4,boris}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--e E] [--b B] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM]
-               [--preset {mirror,ExB,None}] [--xaxis XAXIS] [--yaxis YAXIS]
+               [--preset {mirror,ExB,gradB,betatron,None}] [--xaxis XAXIS] [--yaxis YAXIS]
 
 Run ExB tests
 
@@ -60,7 +66,7 @@ options:
   --size SIZE SIZE      Dimensions of the plot
   --xlim XLIM XLIM      X-axis limits
   --ylim YLIM YLIM      Y-axis limits
-  --preset {mirror,ExB,None}
+  --preset {mirror,ExB,gradB,betatron,None}
                         preset E, B configuration
   --xaxis XAXIS         Quantity for x-axis
   --yaxis YAXIS         Quantity for y-axis

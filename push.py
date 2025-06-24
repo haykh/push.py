@@ -3,19 +3,6 @@ import plotext as plt
 import caltechschool as cs
 import argparse
 
-#     if args.method == "euler":
-#     integrator = euler
-#     name = "Explicit Euler"
-# elif args.method == "implicit":
-#     integrator = implicit
-#     name = "Implicit"
-# elif args.method == "rk4":
-#     integrator = rk4
-#     name = "Runge-Kutta 4th Order"
-# elif args.method == "boris":
-#     integrator = boris
-#     name = "Boris"
-
 
 def euler(
     x: np.ndarray, u: np.ndarray, t: float, dt: float, E: cs.Field, B: cs.Field
@@ -138,9 +125,21 @@ def mirror_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
     return e, b
 
 
+def betatron_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
+    e = np.array([0.1, 0.0, 0.0])
+    b = np.array([0.0, 0.0, np.sign(x[1])])
+    return e, b
+
+
 def ExB_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
     e = np.array([0.0, 0.01, 0.0])
     b = np.array([0.0, 0.0, 1.0])
+    return e, b
+
+
+def gradB_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
+    e = np.array([0.0, 0.0, 0.0])
+    b = np.array([0.0, 0.0, 2.0 + np.max([x[0], 0.0])])
     return e, b
 
 
@@ -150,6 +149,12 @@ PRESETS = {
     },
     "ExB": {
         "fields": ExB_field,
+    },
+    "gradB": {
+        "fields": gradB_field,
+    },
+    "betatron": {
+        "fields": betatron_field,
     },
 }
 METHODS = {
