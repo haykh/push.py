@@ -22,7 +22,7 @@ python3 push.py [ARGS]
 
 1. play with the `--method [METHOD]` flag trying different options, and vary the `--dt [TIMESTEP]`
 2. use predefined fields with `--preset [PRESET]`, e.g., `--preset mirror`
-3. try custom fields with `--e [EFIELD]` and `[--b [BFIELD]`, e.g., `--b 0.0,0.0,2.0+np.tanh(y)` (go crazy)
+3. try custom fields with `--e [EFIELD]` and `--b [BFIELD]`, e.g., `--b 0.0,0.0,2.0+np.tanh(y)` (go crazy)
 
 ### examples
 
@@ -46,6 +46,14 @@ python3 push.py [ARGS]
 ![demo-3](demos/demo-3.png)
 
 </details>
+
+<details>
+<summary><pre>python push.py --method rk4 --dt 0.2 --size 80 40 --u0 1.0 0.0 0.0 --tmax 100 --e "0.0,0.0,0.0" --b "0.0,0.0,1/(1+t/20)"</pre></summary>
+
+![demo-4](demos/demo-4.png)
+
+</details>
+
 
 ### all options
 
