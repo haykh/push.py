@@ -27,30 +27,24 @@ python3 push.py [ARGS]
 ### examples
 
 <details>
-<summary>
-<pre>
-python push.py --method boris --dt 5.0 --size 80 40 --u0 20.0 0.0 0.0 --tmax 500 --e 0.0,0.5,0.0 --b 0.0,0.0,1.0
-</pre>
-</summary>
+<summary><pre>python push.py --method boris --dt 5.0 --size 80 40 --u0 20.0 0.0 0.0 --tmax 500 --e 0.0,0.5,0.0 --b 0.0,0.0,1.0</pre></summary>
+
 ![demo-1](demos/demo-1.png)
+
 </details>
 
 <details>
-<summary>
-<pre>
-python push.py --method implicit --u0 0.05 0.1 0.0 --tmax 150 --preset mirror --dt 0.05
-</pre>
-</summary>
+<summary><pre>python push.py --method implicit --u0 0.05 0.1 0.0 --tmax 150 --preset mirror --dt 0.05</pre></summary>
+
 ![demo-2](demos/demo-2.png)
+
 </details>
 
 <details>
-<summary>
-<pre>
-python push.py --method boris --u0 0.0 1.0 0.0 --x0 0.0 0.0 0.0 --tmax 40 --preset betatron --dt 0.02
-</pre>
-</summary>
+<summary><pre>python push.py --method boris --u0 0.0 1.0 0.0 --x0 0.0 0.0 0.0 --tmax 40 --preset betatron --dt 0.02</pre></summary>
+
 ![demo-3](demos/demo-3.png)
+
 </details>
 
 ### all options
