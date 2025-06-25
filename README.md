@@ -2,6 +2,8 @@
 
 python command-line implementation of popular pusher algorithms for charges in electromagnetic fields. 
 
+> you may run the same setups as shown during the lecture using the `./run.sh [NUMBER]` script.
+
 ### usage
 
 first deploy the virtual python environment and install all the dependencies:
@@ -13,7 +15,7 @@ first deploy the virtual python environment and install all the dependencies:
 # or do it manually
 python3 -m venv .venv
 source .venv/bin/activate
-pip install numpy plotext
+pip3 install numpy plotext
 ```
 
 use the script to run the particle pusher with given params and plot:

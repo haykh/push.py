@@ -178,7 +178,7 @@ def betatron_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
 
 
 def ExB_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
-    e = np.array([0.0, 0.01, 0.0])
+    e = np.array([0.0, 0.2, 0.0])
     b = np.array([0.0, 0.0, 1.0])
     return e, b
 
