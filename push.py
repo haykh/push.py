@@ -4,8 +4,18 @@ import caltechschool as cs
 import argparse
 
 
+#
+# Methods
+#
 def euler(
-    x: np.ndarray, u: np.ndarray, t: float, dt: float, E: cs.Field, B: cs.Field
+    x: np.ndarray,
+    u: np.ndarray,
+    t: float,
+    dt: float,
+    E: cs.Field,
+    B: cs.Field,
+    drag: cs.DragTerm,
+    gammarad: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     xlast = x[-1]
     ulast = u[-1]
@@ -14,11 +24,20 @@ def euler(
     gammalast = np.sqrt(1.0 + np.linalg.norm(ulast) ** 2)
     xnew = xlast + dt * ulast / gammalast
     unew = ulast + dt * (Eval + np.cross(ulast, Bval) / gammalast)
+    if drag is not None:
+        unew += dt * drag(ulast, Eval, Bval, gammarad)
     return xnew, unew
 
 
 def rk4(
-    x: np.ndarray, u: np.ndarray, t: float, dt: float, E: cs.Field, B: cs.Field
+    x: np.ndarray,
+    u: np.ndarray,
+    t: float,
+    dt: float,
+    E: cs.Field,
+    B: cs.Field,
+    drag: cs.DragTerm,
+    gammarad: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     xlast = x[-1]
     ulast = u[-1]
@@ -29,7 +48,11 @@ def rk4(
         return u / np.sqrt(1.0 + np.linalg.norm(u) ** 2)
 
     def rhs_u(u: np.ndarray) -> np.ndarray:
-        return Eval + np.cross(u, Bval) / np.sqrt(1.0 + np.linalg.norm(u) ** 2)
+        lorentz = Eval + np.cross(u, Bval) / np.sqrt(1.0 + np.linalg.norm(u) ** 2)
+        if drag is None:
+            return lorentz
+        else:
+            return lorentz + drag(u, Eval, Bval, gammarad)
 
     k1x = rhs_x(ulast)
     k1u = rhs_u(ulast)
@@ -50,7 +73,14 @@ def rk4(
 
 
 def boris(
-    x: np.ndarray, u: np.ndarray, t: float, dt: float, E: cs.Field, B: cs.Field
+    x: np.ndarray,
+    u: np.ndarray,
+    t: float,
+    dt: float,
+    E: cs.Field,
+    B: cs.Field,
+    drag: cs.DragTerm,
+    gammarad: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     xlast = x[-1]
     ulast = u[-1]
@@ -67,12 +97,23 @@ def boris(
         uprime, Bval
     )
     unew = uplus + 0.5 * dt * Eval
+
+    if drag is not None:
+        unew += dt * drag(0.5 * (unew + ulast), Eval, Bval, gammarad)
+
     xnew = xlast + dt * unew / np.sqrt(1.0 + np.linalg.norm(unew) ** 2)
     return xnew, unew
 
 
 def implicit(
-    x: np.ndarray, u: np.ndarray, t: float, dt: float, E: cs.Field, B: cs.Field
+    x: np.ndarray,
+    u: np.ndarray,
+    t: float,
+    dt: float,
+    E: cs.Field,
+    B: cs.Field,
+    drag: cs.DragTerm,
+    gammarad: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     xlast = x[-1]
     ulast = u[-1]
@@ -85,9 +126,14 @@ def implicit(
         gammaint = np.sqrt(1.0 + np.linalg.norm(uint) ** 2)
         xprime = xlast + dt * uint / gammaint
         uprime = ulast + dt * (Eval + np.cross(uint, Bval) / gammaint)
+        if drag is not None:
+            uprime += dt * drag(uint, Eval, Bval, gammarad)
     return xprime, uprime
 
 
+#
+# Presets
+#
 def mirror_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
     e = np.zeros(3)
     b = np.zeros(3)
@@ -143,6 +189,27 @@ def gradB_field(x: np.ndarray, t: float) -> tuple[np.ndarray, np.ndarray]:
     return e, b
 
 
+#
+# Drag terms
+#
+def synchrotron(
+    u: np.ndarray, e: np.ndarray, b: np.ndarray, gammarad: float
+) -> np.ndarray:
+    gamma = np.sqrt(1 + np.linalg.norm(u) ** 2)
+    beta = u / gamma
+    kappaR = np.cross(e + np.cross(beta, b), b) + np.dot(beta, e) * e
+    chiR2 = np.linalg.norm(e + np.cross(beta, b)) ** 2 - np.dot(beta, e) ** 2
+    return (kappaR - gamma**2 * chiR2 * beta) / gammarad**2
+
+
+def inverseCompton(
+    u: np.ndarray, e: np.ndarray, b: np.ndarray, gammarad: float
+) -> np.ndarray:
+    gamma = np.sqrt(1 + np.linalg.norm(u) ** 2)
+    beta = u / gamma
+    return -(gamma**2) * beta**2 / gammarad**2
+
+
 PRESETS = {
     "mirror": {
         "fields": mirror_field,
@@ -157,6 +224,7 @@ PRESETS = {
         "fields": betatron_field,
     },
 }
+
 METHODS = {
     "euler": {
         "name": "Explicit Euler",
@@ -176,12 +244,29 @@ METHODS = {
     },
 }
 
+DRAGS = {
+    "sync": synchrotron,
+    "ic": inverseCompton,
+}
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run ExB tests")
+    parser = argparse.ArgumentParser(
+        description="Push particles in electromagnetic fields"
+    )
     parser.add_argument(
         "--method",
         choices=METHODS.keys(),
         help="Integration method to use",
+    )
+    parser.add_argument(
+        "--drag",
+        type=str,
+        choices=list(DRAGS.keys()) + [None],
+        default=None,
+        help="Radiative drag to impose",
+    )
+    parser.add_argument(
+        "--gammarad", type=float, default=np.inf, help="Radiative drag gamma factor"
     )
     parser.add_argument(
         "--dt", type=float, default=0.01, help="Time step for integration"
@@ -223,6 +308,20 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--ylim", type=float, nargs=2, default=(-np.inf, np.inf), help="Y-axis limits"
+    )
+    parser.add_argument(
+        "--xscale",
+        type=str,
+        choices=["log", "linear"],
+        default="linear",
+        help="X-axis scale",
+    )
+    parser.add_argument(
+        "--yscale",
+        type=str,
+        choices=["log", "linear"],
+        default="linear",
+        help="Y-axis scale",
     )
     parser.add_argument(
         "--preset",
@@ -278,7 +377,14 @@ if __name__ == "__main__":
     # roll back half step for leapfrog
     if name in ["Boris"]:
         _, u0 = implicit(
-            np.array([args.x0]), np.array([args.u0]), 0.0, -args.dt / 2, Efunc, Bfunc
+            np.array([args.x0]),
+            np.array([args.u0]),
+            0.0,
+            -args.dt / 2,
+            Efunc,
+            Bfunc,
+            None,
+            np.inf,
         )
 
     if integrator is None:
@@ -292,23 +398,25 @@ if __name__ == "__main__":
         E=Efunc,
         B=Bfunc,
         integrator=integrator,
+        drag=DRAGS.get(args.drag, None),
+        gammarad=args.gammarad,
     )
 
     def get_quantity(q: str) -> np.ndarray:
-        if q == "x":
-            return xs[:, 0]
-        elif q == "y":
-            return xs[:, 1]
-        elif q == "z":
-            return xs[:, 2]
-        elif q == "ux":
-            return us[:, 0]
-        elif q == "uy":
-            return us[:, 1]
-        elif q == "uz":
-            return us[:, 2]
-        else:
-            raise ValueError(f"Unknown quantity: {q}")
+        return eval(
+            q,
+            {
+                "x": xs[:, 0],
+                "y": xs[:, 1],
+                "z": xs[:, 2],
+                "ux": us[:, 0],
+                "uy": us[:, 1],
+                "uz": us[:, 2],
+                "g": np.sqrt(1 + np.linalg.norm(us, axis=1) ** 2),
+                "t": ts,
+                "np": np,
+            },
+        )
 
     def get_extent(values: np.ndarray) -> tuple[float, float]:
         dv = np.max(values) - np.min(values)
@@ -330,6 +438,10 @@ if __name__ == "__main__":
 
         xaxis = get_quantity(args.xaxis)
         yaxis = get_quantity(args.yaxis)
+        if args.xscale == "log":
+            xaxis = np.log10(xaxis)
+        if args.yscale == "log":
+            yaxis = np.log10(yaxis)
         plt.plot(xaxis[:ti], yaxis[:ti])
         if args.xlim[0] == -np.inf and args.xlim[1] == np.inf:
             plt.xlim(*get_extent(xaxis))
@@ -340,8 +452,8 @@ if __name__ == "__main__":
             plt.ylim(*get_extent(yaxis))
         else:
             plt.ylim(*args.ylim)
-        plt.xlabel(args.xaxis)
-        plt.ylabel(args.yaxis)
+        plt.xlabel(("log " if args.xscale == "log" else "") + args.xaxis)
+        plt.ylabel(("log " if args.yscale == "log" else "") + args.yaxis)
         plt.title(f"{name} dt={args.dt}")
 
     plt.theme("pro")

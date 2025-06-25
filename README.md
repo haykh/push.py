@@ -1,3 +1,7 @@
+# `push.py`
+
+python command-line implementation of popular pusher algorithms for charges in electromagnetic fields. 
+
 ### usage
 
 first deploy the virtual python environment and install all the dependencies:
@@ -24,6 +28,7 @@ python3 push.py [ARGS]
 2. use predefined fields with `--preset [PRESET]`, e.g., `--preset mirror`
 3. try custom fields with `--e [EFIELD]` and `--b [BFIELD]`, e.g., `--b 0.0,0.0,2.0+np.tanh(y)` (go crazy)
 4. play it as a movie(!!!) by adding `--movie [FRAMERATE]`
+5. add synchrotron drag to the problem by providing `--drag sync` and `--gammarad [NUMBER]`
 
 ### examples
 
@@ -60,15 +65,19 @@ python3 push.py [ARGS]
 
 all the possible arguments are listed below:
 ```sh
-usage: push.py [-h] [--method {euler,implicit,rk4,boris}] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--e E] [--b B] [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM]
-               [--preset {mirror,ExB,gradB,betatron,None}] [--xaxis XAXIS] [--yaxis YAXIS] [--movie MOVIE]
+usage: push.py [-h] [--method {euler,implicit,rk4,boris}] [--drag {sync,ic,None}] [--gammarad GAMMARAD] [--dt DT] [--tmax TMAX] [--x0 X0 X0 X0] [--u0 U0 U0 U0] [--e E] [--b B]
+               [--size SIZE SIZE] [--xlim XLIM XLIM] [--ylim YLIM YLIM] [--xscale {log,linear}] [--yscale {log,linear}] [--preset {mirror,ExB,gradB,betatron,None}] [--xaxis XAXIS]
+               [--yaxis YAXIS] [--movie MOVIE]
 
-Push a particle in the given electromagnetic fields
+Push particles in electromagnetic fields
 
 options:
   -h, --help            show this help message and exit
   --method {euler,implicit,rk4,boris}
                         Integration method to use
+  --drag {sync,ic,None}
+                        Radiative drag to impose
+  --gammarad GAMMARAD   Radiative drag gamma factor
   --dt DT               Time step for integration
   --tmax TMAX           Maximum time for integration
   --x0 X0 X0 X0         Initial position: x, y, z
@@ -78,6 +87,10 @@ options:
   --size SIZE SIZE      Dimensions of the plot
   --xlim XLIM XLIM      X-axis limits
   --ylim YLIM YLIM      Y-axis limits
+  --xscale {log,linear}
+                        X-axis scale
+  --yscale {log,linear}
+                        Y-axis scale
   --preset {mirror,ExB,gradB,betatron,None}
                         preset E, B configuration
   --xaxis XAXIS         Quantity for x-axis
