@@ -390,7 +390,7 @@ if __name__ == "__main__":
     if integrator is None:
         raise ValueError("Invalid integration method specified.")
 
-    ts, xs, us = cs.integrate(
+    ts, x1s, u1s = cs.integrate(
         x0=np.array(x0),
         u0=np.array(u0),
         dt=args.dt,
@@ -402,17 +402,33 @@ if __name__ == "__main__":
         gammarad=args.gammarad,
     )
 
-    def get_quantity(q: str) -> np.ndarray:
+    ts, x2s, u2s = cs.integrate(
+        x0=np.array(x0),
+        u0=np.array(u0),
+        dt=args.dt,
+        tmax=args.tmax,
+        E=lambda x, t: -Efunc(x, t),
+        B=lambda x, t: -Bfunc(x, t),
+        integrator=integrator,
+        drag=DRAGS.get(args.drag, None),
+        gammarad=args.gammarad,
+    )
+
+    def get_quantity(which: int, q: str) -> np.ndarray:
         return eval(
             q,
             {
-                "x": xs[:, 0],
-                "y": xs[:, 1],
-                "z": xs[:, 2],
-                "ux": us[:, 0],
-                "uy": us[:, 1],
-                "uz": us[:, 2],
-                "g": np.sqrt(1 + np.linalg.norm(us, axis=1) ** 2),
+                "x": x1s[:, 0] if which == 1 else x2s[:, 0],
+                "y": x1s[:, 1] if which == 1 else x2s[:, 1],
+                "z": x1s[:, 2] if which == 1 else x2s[:, 2],
+                "ux": u1s[:, 0] if which == 1 else u2s[:, 0],
+                "uy": u1s[:, 1] if which == 1 else u2s[:, 1],
+                "uz": u1s[:, 2] if which == 1 else u2s[:, 2],
+                "g": (
+                    np.sqrt(1 + np.linalg.norm(u1s, axis=1) ** 2)
+                    if which == 1
+                    else np.sqrt(1 + np.linalg.norm(u2s, axis=1) ** 2)
+                ),
                 "t": ts,
                 "np": np,
             },
@@ -436,22 +452,31 @@ if __name__ == "__main__":
         else:
             print(f"using preset {args.preset}")
 
-        xaxis = get_quantity(args.xaxis)
-        yaxis = get_quantity(args.yaxis)
-        if args.xscale == "log":
-            xaxis = np.log10(xaxis)
-        if args.yscale == "log":
-            yaxis = np.log10(yaxis)
-        plt.plot(xaxis[:ti], yaxis[:ti])
+        x_, y_ = None, None
+        for i in [1, 2]:
+            xaxis = get_quantity(i, args.xaxis)
+            yaxis = get_quantity(i, args.yaxis)
+            if args.xscale == "log":
+                xaxis = np.log10(xaxis)
+            if args.yscale == "log":
+                yaxis = np.log10(yaxis)
+            plt.plot(xaxis[:ti], yaxis[:ti])
+            if i == 1:
+                x_, y_ = xaxis, yaxis
+            else:
+                x_ = np.concatenate((x_, xaxis))
+                y_ = np.concatenate((y_, yaxis))
+
         if args.xlim[0] == -np.inf and args.xlim[1] == np.inf:
-            plt.xlim(*get_extent(xaxis))
+            plt.xlim(*get_extent(x_))
         else:
             plt.xlim(*args.xlim)
 
         if args.ylim[0] == -np.inf and args.ylim[1] == np.inf:
-            plt.ylim(*get_extent(yaxis))
+            plt.ylim(*get_extent(y_))
         else:
             plt.ylim(*args.ylim)
+
         plt.xlabel(("log " if args.xscale == "log" else "") + args.xaxis)
         plt.ylabel(("log " if args.yscale == "log" else "") + args.yaxis)
         plt.title(f"{name} dt={args.dt}")
